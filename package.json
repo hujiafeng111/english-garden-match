@@ -1,0 +1,11 @@
+{
+  "name": "english-garden-match",
+  "version": "0.1.0",
+  "private": true,
+  "description": "英语花园消消乐（四六级版）",
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "serve": "node scripts/serve.cjs",
+    "test": "node checks/word-garden.cjs word-garden-premium.html"
+  }
+}

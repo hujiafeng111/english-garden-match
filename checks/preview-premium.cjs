@@ -1,0 +1,91 @@
+const fs=require('node:fs');
+const path=require('node:path');
+const assert=require('node:assert/strict');
+const {pathToFileURL}=require('node:url');
+const {chromium}=require('C:/Users/Administrator/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+(async()=>{
+  const browser=await chromium.launch({channel:'msedge',headless:true});
+  try{
+    const page=await browser.newPage({viewport:{width:1440,height:1050}});
+    const errors=[];page.on('pageerror',error=>errors.push(error.message));
+    await page.addInitScript(()=>{window.pronounced=[];Object.defineProperty(window,'speechSynthesis',{value:{cancel(){},speak(utterance){window.pronounced.push({text:utterance.text,lang:utterance.lang})}},configurable:true})});
+    await page.goto(pathToFileURL(path.join(__dirname,'..','word-garden-premium.html')).href);
+    await page.locator('#entry:not([hidden])').waitFor();
+    assert.equal(await page.title(),'英语花园消消乐（四六级版）');
+    await page.locator('#entry-cet6').click();
+    assert.equal(await page.evaluate(()=>bank),6);
+    assert.ok(await page.evaluate(()=>grid.every(tile=>banks[6].some(pair=>pair[0]===banks[bank][tile.type][0]))));
+    await page.locator('.cell[data-index]').nth(35).waitFor();
+    await page.locator('#live-garden-scene').waitFor();
+    assert.equal(await page.locator('.bouquet-card:disabled').count(),8,'A new collection must show eight locked bouquets');
+    await page.waitForTimeout(250);
+    const out=path.join(__dirname,'..','preview');fs.mkdirSync(out,{recursive:true});
+    await page.screenshot({path:path.join(out,'premium-desktop.png'),fullPage:true});
+    await page.setViewportSize({width:390,height:844});
+    await page.waitForTimeout(100);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Mobile layout must not overflow horizontally');
+    await page.screenshot({path:path.join(out,'premium-mobile.png'),fullPage:true});
+    await page.locator('.board-wrap').screenshot({path:path.join(out,'board-deeper-colors.png')});
+    const move=await page.evaluate(()=>possibleMove());
+    await page.locator(`[data-index="${move[0]}"]`).click();
+    await page.locator(`[data-index="${move[1]}"]`).click();
+    await page.waitForFunction(()=>!busy);
+    const spoken=await page.evaluate(()=>window.pronounced);
+    assert.ok(spoken.length>=2,'Elimination automatically narrates');
+    assert.equal(spoken.length%2,0);
+    for(let i=0;i<spoken.length;i+=2){assert.equal(spoken[i].lang,'en-US');assert.equal(spoken[i+1].lang,'zh-CN');}
+    assert.ok(await page.locator('.word-reward').count()>0,'Elimination shows Chinese reward cards');
+    await page.locator('.word-reward button').first().click();
+    assert.equal(await page.evaluate(()=>window.pronounced.length),spoken.length+2,'Manual replay includes English and Chinese');
+    await page.screenshot({path:path.join(out,'premium-mobile-match.png'),fullPage:true});
+    await page.evaluate(()=>{if(finished)closeOverlay('result');start();goal=1});
+    const winMove=await page.evaluate(()=>possibleMove());
+    await page.locator(`[data-index="${winMove[0]}"]`).click();
+    await page.locator(`[data-index="${winMove[1]}"]`).click();
+    await page.locator('#result:not([hidden])').waitFor();
+    assert.equal(await page.locator('#live-garden-stats b').first().textContent(),'1','Victory updates visible garden progress immediately');
+    assert.equal(await page.locator('.bouquet-card.active').getAttribute('data-bouquet'),'0');
+    await page.locator('#result-primary').click();
+    await page.evaluate(()=>{goal=1});
+    const secondWin=await page.evaluate(()=>possibleMove());
+    await page.locator(`[data-index="${secondWin[0]}"]`).click();
+    await page.locator(`[data-index="${secondWin[1]}"]`).click();
+    await page.locator('#result:not([hidden])').waitFor();
+    await page.locator('#result-primary').click();
+    await page.evaluate(()=>{goal=1});
+    const thirdWin=await page.evaluate(()=>possibleMove());
+    await page.locator(`[data-index="${thirdWin[0]}"]`).click();
+    await page.locator(`[data-index="${thirdWin[1]}"]`).click();
+    await page.locator('#result:not([hidden])').waitFor();
+    assert.equal(await page.locator('.bouquet-card.active').getAttribute('data-bouquet'),'1');
+    await page.locator('#result-primary').click();
+    await page.locator('[data-bouquet="0"]').click();
+    assert.equal(await page.locator('.bouquet-card.active').getAttribute('data-bouquet'),'0','Unlocked bouquet can be changed inline');
+    await page.reload();
+    await page.locator('#entry:not([hidden])').waitFor();
+    assert.equal(await page.evaluate(()=>saved.bank),6,'Entry choice persists');
+    await page.locator('#entry-cet4').click();
+    assert.equal(await page.evaluate(()=>bank),4,'Entry can select the four-level vocabulary');
+    assert.equal(await page.locator('.bouquet-card.active').getAttribute('data-bouquet'),'0','Bouquet selection survives reload');
+    assert.equal(await page.locator('#live-garden-stats b').first().textContent(),'3');
+    assert.equal(await page.evaluate(()=>bouquetCount(0)),2);
+    assert.equal(await page.evaluate(()=>bouquetCount(1)),1);
+    await page.evaluate(()=>{
+      for(let n=0;n<=120;n++){
+        if(bouquets.reduce((total,_,i)=>total+bouquetCount(i,n),0)!==n)throw Error('Reward count mismatch at '+n);
+      }
+      for(const b of bouquets){if(bouquets[bouquetForLevel(b.unlock)].name!==b.name)throw Error('Milestone mismatch')}
+      const before=saved.completed;finish(false);finish(true);if(saved.completed!==before)throw Error('Failed level received bouquet');
+      start();saved.completed=39;finish(true);if(selectedBouquet!==7||bouquetCount(7)!==1)throw Error('Legendary reward missing');
+      const total=saved.completed;finish(true);if(saved.completed!==total)throw Error('Duplicate reward');
+      closeOverlay('result');
+    });
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+    await page.locator('.live-garden').screenshot({path:path.join(out,'bouquet-collection-mobile.png')});
+    await page.setViewportSize({width:1440,height:1050});
+    await page.locator('.live-garden').screenshot({path:path.join(out,'bouquet-collection-desktop.png')});
+    assert.deepEqual(errors,[]);
+    console.log('PASS: responsive rendering, swaps, bilingual narration, inline garden updates, unlocks, decoration changes and persistence.');
+    console.log('Screenshots saved to preview/');
+  }finally{await browser.close()}
+})().catch(error=>{console.error(error);process.exitCode=1});

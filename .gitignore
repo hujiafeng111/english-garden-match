@@ -1,0 +1,14 @@
+node_modules/
+dist/
+release/
+release-website.zip
+.tools/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.log
+preview/
+checks/*-runtime.json

@@ -1,0 +1,22 @@
+const assert=require('node:assert/strict');
+const {chromium}=require('C:/Users/Administrator/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+(async()=>{const browser=await chromium.launch({channel:'msedge',headless:true});try{
+ const context=await browser.newContext({viewport:{width:390,height:844},userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'});
+ const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:4173/');
+ await page.locator('#entry-cet4').click();
+ assert.equal(await page.locator('.options button').filter({hasText:'安装到 iPhone'}).count(),1);
+ await page.locator('.options button').filter({hasText:'安装到 iPhone'}).click();
+ await page.locator('#ios-install[open]').waitFor();await page.locator('#ios-install button').click();
+ await page.evaluate(()=>navigator.serviceWorker.ready);await page.reload();
+ await page.evaluate(()=>navigator.serviceWorker.ready);
+ const cached=await page.evaluate(async()=>{const names=await caches.keys();const cache=await caches.open(names.find(n=>n.startsWith('english-garden-')));return (await cache.keys()).map(r=>r.url)});
+ assert.ok(cached.some(url=>url.endsWith('assets/bouquet-collection-v1.png')));
+ assert.ok(await page.evaluate(()=>navigator.serviceWorker.controller!==null));
+ await context.setOffline(true);await page.reload();await page.locator('#entry-cet6').click();
+ assert.equal(await page.locator('.cell').count(),36);
+ assert.ok(await page.evaluate(()=>Array.from(document.images).every(image=>image.complete)));
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+ const icon=await page.evaluate(async()=>{const response=await fetch('./assets/icon-192.png');return response.status});assert.equal(icon,200);
+ assert.deepEqual(errors,[]);await context.close();console.log('PASS: install guidance, cached assets, offline reload, six-level entry and mobile layout. iPhone UI simulated in Edge; real iOS installation not tested.');
+}finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
