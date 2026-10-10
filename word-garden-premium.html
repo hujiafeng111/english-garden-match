@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="./bouquet-collection.css">
 <link rel="stylesheet" href="./garden-entry.css">
 <link rel="stylesheet" href="./word-curriculum.css">
+<link rel="stylesheet" href="./match-effects.css">
 </head>
 <body>
 <main class="app" id="game-main">
@@ -73,13 +74,24 @@ function pumpSpeech(){
  if(readingJob||!speechJobs.length)return;const job=speechJobs.shift(),epoch=speechEpoch;readingJob=true;activeSpeechKey=job.key;
  const voices=window.speechSynthesis.getVoices?.()||[];
  const done=()=>{if(epoch!==speechEpoch)return;readingJob=false;activeSpeechKey=null;pumpSpeech()};
- for(const [index,[text,lang,rate]] of [[job.word,'en-US',.85],[job.meaning,'zh-CN',.95]].entries()){
-  const utterance=new SpeechSynthesisUtterance(text);utterance.lang=lang;utterance.rate=rate;
+ // Start Chinese immediately at the English end event, without a native queue transition.
+ const parts=[[job.word,'en-US',.85],[job.meaning,'zh-CN',.95]];
+ function readPart(index){
+  if(epoch!==speechEpoch)return;
+  const [text,lang,rate]=parts[index],utterance=new SpeechSynthesisUtterance(text);
+  utterance.lang=lang;utterance.rate=rate;
   const voice=voices.find(v=>v.lang.toLowerCase()===lang.toLowerCase())||voices.find(v=>v.lang.toLowerCase().startsWith(lang.slice(0,2).toLowerCase()));if(voice)utterance.voice=voice;
-  if(index===1)utterance.onend=done;
-  utterance.onerror=event=>{if(!['canceled','interrupted'].includes(event.error))toast('读音暂时不可用，请检查系统的中英文语音');if(index===1)done()};
+  let ended=false;
+  const advance=()=>{
+   if(ended||epoch!==speechEpoch)return;ended=true;
+   if(index===1){done();return}
+   window.speechSynthesis.cancel();readPart(1);
+  };
+  utterance.onend=advance;
+  utterance.onerror=event=>{if(epoch!==speechEpoch||['canceled','interrupted'].includes(event.error))return;toast('读音暂时不可用，请检查系统的中英文语音');advance()};
   window.speechSynthesis.speak(utterance);
  }
+ readPart(0);
 }
 function speak(type,manual=false,senseIndex=null){
  if(type===null||!activeLesson.items[type])return;
@@ -148,11 +160,29 @@ const covered=new Set(groups.flatMap(group=>[...group.indices]));
 const spokenTypes=new Set(groups.map(group=>group.type));
 for(const i of hits){const tile=grid[i];if(tile&&!covered.has(i)&&!spokenTypes.has(tile.type)){spokenTypes.add(tile.type);speak(tile.type)}}
 }
-function particles(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const colors=['#f6dc8b','#f9d1ba','#d2e8b6','#fff5d5'];$('particles').innerHTML=Array.from({length:16},(_,i)=>`<i class="particle" style="left:${20+Math.random()*60}%;top:${20+Math.random()*50}%;--c:${colors[i%4]};--x:${(Math.random()-.5)*190}px;--y:${(Math.random()-.5)*160}px"></i>`).join('');setTimeout(()=>$('particles').replaceChildren(),950)}
+let effectTimer,progressPulseTimer;
+function particles(hits,found,chain,giftCount){
+ const layer=$('particles');clearTimeout(effectTimer);
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches){layer.replaceChildren();return}
+ const box=layer.getBoundingClientRect(),points=new Map();
+ for(const i of hits){const el=$('board').querySelector('[data-index="'+i+'"]');if(!el||!grid[i])continue;const r=el.getBoundingClientRect();points.set(i,{x:r.left+r.width/2-box.left,y:r.top+r.height/2-box.top,color:palette[grid[i].type][0]})}
+ if(!points.size)return;
+ const all=[...points.values()],center={x:all.reduce((n,p)=>n+p.x,0)/all.length,y:all.reduce((n,p)=>n+p.y,0)/all.length};
+ const strong=giftCount>0||chain>1,amount=Math.max(0,hits.size-giftCount);let html='';
+ for(const run of found){const ps=run.indices.map(i=>points.get(i)).filter(Boolean);if(ps.length<2)continue;const p=ps[0],q=ps.at(-1),length=Math.hypot(q.x-p.x,q.y-p.y),angle=Math.atan2(q.y-p.y,q.x-p.x)*180/Math.PI;html+='<i class="match-link" style="left:'+p.x+'px;top:'+p.y+'px;width:'+length+'px;transform:rotate('+angle+'deg)"></i>'}
+ for(const p of all){html+='<i class="match-ring" style="left:'+p.x+'px;top:'+p.y+'px;--ring-size:'+(strong?92:68)+'px"></i>';for(let n=0;n<(strong?3:2);n++){const angle=Math.random()*Math.PI*2,distance=24+Math.random()*(strong?65:40);html+='<i class="match-petal" style="left:'+p.x+'px;top:'+p.y+'px;--petal-color:'+p.color+';--dx:'+Math.cos(angle)*distance+'px;--dy:'+Math.sin(angle)*distance+'px;--spin:'+(120+Math.random()*240)+'deg"></i>'}}
+ const target=$('progress').parentElement.getBoundingClientRect(),tx=target.left+target.width*Math.min(1,(collected+amount)/goal)-box.left,ty=target.top+target.height/2-box.top;
+ for(const p of all.filter((_,i)=>i%Math.max(1,Math.ceil(all.length/6))===0)){html+='<i class="match-flight" style="left:'+p.x+'px;top:'+p.y+'px;--petal-color:'+p.color+';--fly-x:'+(tx-p.x)+'px;--fly-y:'+(ty-p.y)+'px"></i>'}
+ const title=chain>1?'连消 ×'+chain:giftCount?'漂亮消除！':'';
+ html+='<div class="match-score '+(strong?'match-score-strong':'')+'" style="left:'+center.x+'px;top:'+center.y+'px">'+(title?'<b>'+title+'</b>':'')+'<span>＋'+amount+' 花瓣</span></div>';
+ layer.innerHTML=html;effectTimer=setTimeout(()=>layer.replaceChildren(),1000);
+ clearTimeout(progressPulseTimer);progressPulseTimer=setTimeout(()=>{$('progress').parentElement.classList.remove('petal-arrival');void $('progress').offsetWidth;$('progress').parentElement.classList.add('petal-arrival')},580);
+}
+
 function expandSpecials(initial,forcedType){const hits=new Set(initial),activated=new Set();let changed=true;while(changed){changed=false;for(const i of [...hits]){const tile=grid[i];if(!tile||!tile.special||activated.has(i))continue;activated.add(i);changed=true;if(tile.special==='row'){const r=Math.floor(i/N);for(let c=0;c<N;c++)hits.add(cellIndex(r,c))}else if(tile.special==='column'){const c=i%N;for(let r=0;r<N;r++)hits.add(cellIndex(r,c))}else{const type=forcedType??tile.type;grid.forEach((t,j)=>{if(t&&t.type===type)hits.add(j)})}}}return hits}
 function collapse(){for(let c=0;c<N;c++){const column=[];for(let r=N-1;r>=0;r--)if(grid[cellIndex(r,c)])column.push(grid[cellIndex(r,c)]);for(let r=N-1;r>=0;r--)grid[cellIndex(r,c)]=column[N-1-r]||randomTile()}}
 async function resolveBoard(forced=[],preferred=-1,forcedType){let chain=0;while(true){const found=runs();if(!found.length&&!forced.length)break;chain++;const initial=forced.length?forced:found.flatMap(run=>run.indices);const hits=expandSpecials(initial,forcedType);const gifts=new Map();if(!forced.length){for(const run of found){if(run.indices.length<4)continue;const at=run.indices.includes(preferred)?preferred:run.indices[Math.floor(run.indices.length/2)];if(!grid[at].special)gifts.set(at,createTile(run.type,run.indices.length>=5?'rainbow':run.axis===0?'row':'column'))}}
-showMatchWords(hits);const first=grid[[...hits][0]];if(first){const pair=banks[bank][first.type];setFeedback((chain>1?'连消 × '+chain+' · ':'')+pair[0]+'  '+pair[1]+(gifts.size?' · 道具诞生！':''),chain>1||gifts.size>0)}for(const i of hits)$('board').querySelector(`[data-index="${i}"]`)?.classList.add('clearing');particles();await wait(260);let count=0;for(const i of hits){if(gifts.has(i))grid[i]=gifts.get(i);else{grid[i]=null;count++}}collected+=count;render();await wait(75);collapse();render();await wait(480);forced=[];forcedType=undefined;preferred=-1;
+showMatchWords(hits);const first=grid[[...hits][0]];if(first){const pair=banks[bank][first.type];setFeedback((chain>1?'连消 × '+chain+' · ':'')+pair[0]+'  '+pair[1]+(gifts.size?' · 道具诞生！':''),chain>1||gifts.size>0)}for(const i of hits)$('board').querySelector(`[data-index="${i}"]`)?.classList.add('match-lit');particles(hits,found,chain,gifts.size);await wait(130);for(const i of hits)$('board').querySelector(`[data-index="${i}"]`)?.classList.add('clearing');await wait(190);let count=0;for(const i of hits){if(gifts.has(i))grid[i]=gifts.get(i);else{grid[i]=null;count++}}collected+=count;render();await wait(75);collapse();render();await wait(480);forced=[];forcedType=undefined;preferred=-1;
 if(chain>=30){freshGrid();render();break}}
 if(collected>=goal){finish(true);return}if(moves<=0){finish(false);return}if(!possibleMove()){freshGrid();render();toast('微风吹过，棋盘自动重排')}busy=false;render()}
 async function swap(a,b){if(busy||finished||!neighbors(a,b))return;busy=true;selected=-1;const specialA=grid[a].special,specialB=grid[b].special;[grid[a],grid[b]]=[grid[b],grid[a]];render();await wait(230);if(!specialA&&!specialB&&!runs().length){[grid[a],grid[b]]=[grid[b],grid[a]];busy=false;render();setFeedback('再试试另一组搭档，不扣步数');return}matchedTypes.clear();moves--;render();let forced=[];let targetType;if(specialA||specialB){forced=[a,b];targetType=specialA==='rainbow'?grid[a].type:specialB==='rainbow'?grid[b].type:undefined;if(specialA==='rainbow'&&specialB==='rainbow')forced=Array.from({length:N*N},(_,i)=>i)}await resolveBoard(forced,b,targetType)}

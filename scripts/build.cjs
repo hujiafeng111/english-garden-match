@@ -3,7 +3,7 @@ const path=require('node:path');
 const crypto=require('node:crypto');
 const root=path.join(__dirname,'..'),out=path.join(root,'dist');
 fs.mkdirSync(path.join(out,'assets'),{recursive:true});
-const styles=['garden-premium.css','dream-garden.css','floral-garden.css','botanical-palette.css','bouquet-collection.css','garden-entry.css','word-curriculum.css'];
+const styles=['garden-premium.css','dream-garden.css','floral-garden.css','botanical-palette.css','bouquet-collection.css','garden-entry.css','word-curriculum.css','match-effects.css'];
 const art=['floral-garden-v1.png','bouquet-collection-v1.png','conservatory.svg','dream-garden.svg'];
 for(const file of [...styles,'manifest.webmanifest','pwa.js','vocabulary-data.js','curriculum-plan.js','word-curriculum.js'])fs.copyFileSync(path.join(root,file),path.join(out,file));
 for(const file of art)fs.copyFileSync(path.join(root,'assets',file),path.join(out,'assets',file));
