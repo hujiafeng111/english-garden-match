@@ -8,7 +8,7 @@ const {chromium}=require('C:/Users/Administrator/.cache/codex-runtimes/codex-pri
   try{
     const page=await browser.newPage({viewport:{width:1440,height:1050}});
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
-    await page.addInitScript(()=>{window.pronounced=[];Object.defineProperty(window,'speechSynthesis',{value:{cancel(){},speak(utterance){window.pronounced.push({text:utterance.text,lang:utterance.lang})}},configurable:true})});
+    await page.addInitScript(()=>{window.pronounced=[];Object.defineProperty(window,'speechSynthesis',{value:{cancel(){},speak(utterance){window.pronounced.push({text:utterance.text,lang:utterance.lang});if(utterance.onend)utterance.onend()}},configurable:true})});
     await page.goto(pathToFileURL(path.join(__dirname,'..','word-garden-premium.html')).href);
     await page.locator('#entry:not([hidden])').waitFor();
     assert.equal(await page.title(),'英语花园消消乐（四六级版）');
@@ -35,7 +35,7 @@ const {chromium}=require('C:/Users/Administrator/.cache/codex-runtimes/codex-pri
     assert.equal(spoken.length%2,0);
     for(let i=0;i<spoken.length;i+=2){assert.equal(spoken[i].lang,'en-US');assert.equal(spoken[i+1].lang,'zh-CN');}
     assert.ok(await page.locator('.word-reward').count()>0,'Elimination shows Chinese reward cards');
-    await page.locator('.word-reward button').first().click();
+    await page.locator('.word-reward [data-read-type]').first().click();
     assert.equal(await page.evaluate(()=>window.pronounced.length),spoken.length+2,'Manual replay includes English and Chinese');
     await page.screenshot({path:path.join(out,'premium-mobile-match.png'),fullPage:true});
     await page.evaluate(()=>{if(finished)closeOverlay('result');start();goal=1});

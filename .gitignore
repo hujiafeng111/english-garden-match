@@ -2,6 +2,7 @@ node_modules/
 dist/
 release/
 release-website.zip
+release-vocabulary.zip
 .tools/
 .env
 .env.*

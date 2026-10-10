@@ -1,0 +1,107 @@
+{
+  "files": [
+    {
+      "name": "01.大学英语四级词汇完整带音标-可打印-可编辑-正序版.xls",
+      "rows": 4428,
+      "sha256": "7e3531d4b98daaf7f4618a5c4f59ebcb420adf49ab811d4a6e67904bf813db31"
+    },
+    {
+      "name": "02.大学英语四级词汇完整带音标-可打印-可编辑-乱序版.xls",
+      "rows": 4428,
+      "sha256": "ed85f1536187f4048c9628ce89b417e8a6e14af98cd48de0ee5673e8f67af82b"
+    },
+    {
+      "name": "大学英语六级词汇完整带音标-可打印-可编辑-乱序版.xls",
+      "rows": 5523,
+      "sha256": "0e04a287ef180f6b982c2c41ba053c7959645468c1fc6347419a040b2d3b568b"
+    },
+    {
+      "name": "大学英语六级词汇完整带音标-可打印-可编辑-正序版.xls",
+      "rows": 5523,
+      "sha256": "b7af971ee04e7c27d6ee8cf7a5a0cb1c1d0bf7f392da2a338e192d6f086a1f2c"
+    }
+  ],
+  "courses": {
+    "4": {
+      "inputRows": 4428,
+      "imported": 4424,
+      "multisense": 4261,
+      "orderComparisonDifferences": 4,
+      "source": "01.大学英语四级词汇完整带音标-可打印-可编辑-正序版.xls",
+      "frequencyAvailable": false,
+      "comparisonDifferences": [
+        {
+          "word": "above",
+          "phonetic": "/əˈbʌv/",
+          "definition": "adj.上面的,上述的,上文的; adv.在上面;prep.在...上方,过于,超出",
+          "in": "sorted"
+        },
+        {
+          "word": "above",
+          "phonetic": "/əˈbʌv/",
+          "definition": "adj.上面的,上述的,上文的;adv.在上面;prep.在...上方,过于,超出",
+          "in": "shuffled"
+        },
+        {
+          "word": "spit",
+          "phonetic": "/spɪt/",
+          "definition": "vi. 吐痰；吐口水；发出劈啪声 vt. 吐，吐出；发出；发射n. 唾液",
+          "in": "shuffled"
+        },
+        {
+          "word": "spit",
+          "phonetic": "/spɪt/",
+          "definition": "vi. 吐痰；吐口水；发出劈啪声vt. 吐，吐出；发出；发射n. 唾液",
+          "in": "sorted"
+        }
+      ]
+    },
+    "6": {
+      "inputRows": 5523,
+      "imported": 5518,
+      "multisense": 5328,
+      "orderComparisonDifferences": 6,
+      "source": "大学英语六级词汇完整带音标-可打印-可编辑-正序版.xls",
+      "frequencyAvailable": false,
+      "comparisonDifferences": [
+        {
+          "word": "atmospheric",
+          "phonetic": "/ˌætməsˈfɪrɪk,ˌætməsˈferɪk/",
+          "definition": "adj. 大气的，大气层的",
+          "in": "sorted"
+        },
+        {
+          "word": "atmospheric",
+          "phonetic": "/ˌætməsˈfɪrɪk/",
+          "definition": "adj. 大气的，大气层的",
+          "in": "shuffled"
+        },
+        {
+          "word": "complex",
+          "phonetic": "/kəmˈpleks,ˈkɑːmpleks/",
+          "definition": "adj. 复杂的；合成的n. 复合体；综合设施",
+          "in": "sorted"
+        },
+        {
+          "word": "complex",
+          "phonetic": "/kəmˈpleks/",
+          "definition": "adj. 复杂的；合成的n. 复合体；综合设施",
+          "in": "shuffled"
+        },
+        {
+          "word": "suggestion",
+          "phonetic": "/səˈdʒestʃən,səɡˈdʒestʃən/",
+          "definition": "n. 建议；示意；微量，细微的迹象",
+          "in": "sorted"
+        },
+        {
+          "word": "suggestion",
+          "phonetic": "/səˈdʒestʃən/",
+          "definition": "n. 建议；示意；微量，细微的迹象",
+          "in": "shuffled"
+        }
+      ]
+    }
+  },
+  "skipped": []
+}

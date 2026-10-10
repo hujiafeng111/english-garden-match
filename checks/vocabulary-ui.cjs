@@ -1,0 +1,20 @@
+const assert=require('node:assert/strict'),path=require('node:path');
+const {chromium}=require('C:/Users/Administrator/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+(async()=>{const b=await chromium.launch({channel:'msedge',headless:true});try{
+ const page=await b.newPage({viewport:{width:390,height:844}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.addInitScript(()=>{window.spoken=[];Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{cancel(){},speak(u){spoken.push({text:u.text,lang:u.lang});if(u.onend)u.onend()}}})});
+ await page.goto('http://127.0.0.1:4173/');await page.locator('#entry-cet4').click();
+ const initial=await page.evaluate(()=>banks[4].map(p=>p[0]));assert.equal(new Set(initial).size,6);
+ const move=await page.evaluate(()=>possibleMove());await page.locator('[data-index="'+move[0]+'"]').click();await page.locator('[data-index="'+move[1]+'"]').click();await page.waitForFunction(()=>!busy);
+ await page.locator('[data-word-detail]').first().click();await page.locator('#word-detail:not([hidden])').waitFor();assert.equal(await page.locator('.sense-row.current').count(),1);
+ const type=Number(await page.locator('[data-word-detail]').first().getAttribute('data-word-detail'));assert.ok(await page.locator('.sense-row').count()>1);
+ const before=await page.evaluate(()=>spoken.length);await page.locator('[data-sense-index="1"]').click();assert.equal(await page.evaluate(()=>spoken.length),before+2);
+ assert.equal(await page.evaluate(()=>spoken.at(-1).text),await page.evaluate(t=>activeLesson.items[t].entry.senses[1].speechMeaning,type));
+ await page.locator('#word-detail').screenshot({path:path.join(__dirname,'../preview/word-senses-mobile.png')});await page.locator('#word-detail [data-close]').last().click();
+ await page.evaluate(()=>{start();finish(true)});await page.locator('#result-primary').click();assert.equal(await page.evaluate(()=>level),2);assert.notDeepEqual(await page.evaluate(()=>banks[4].map(p=>p[0])),initial);
+ await page.reload();await page.locator('#entry-cet6').click();assert.equal(await page.evaluate(()=>level),1);
+ await page.locator('#settings-open').click();await page.locator('#cet4').click();await page.locator('#settings-save').click();assert.equal(await page.evaluate(()=>level),2);
+ await page.evaluate(()=>{const words=JSON.stringify(banks[bank]);finish(false);start();if(words!==JSON.stringify(banks[bank]))throw Error('Retry changed lesson')});
+ await page.evaluate(()=>{clearSpeech();readAll=false;window.held=[];window.speechSynthesis.speak=u=>held.push(u);speak(0);speak(1);speak(1);if(speechJobs.length!==1)throw Error('Duplicate waiting word');speak(2,true);if(speechJobs.length!==0||held.length!==4)throw Error('Manual replay did not interrupt');clearSpeech()});
+ assert.deepEqual(errors,[]);console.log('PASS: sense details and replay, new words, independent persisted progress, stable retry and merged speech queue.');
+}finally{await b.close()}})().catch(e=>{console.error(e);process.exitCode=1});

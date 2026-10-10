@@ -13,12 +13,16 @@ function node() {
 const document = {getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id)},
   querySelectorAll(){return []},addEventListener(){},activeElement:null};
 const spoken=[];
-const context = vm.createContext({document, window:{addEventListener(){},speechSynthesis:{cancel(){},speak(utterance){spoken.push({text:utterance.text,lang:utterance.lang})}}},
+const context = vm.createContext({document, window:{addEventListener(){},speechSynthesis:{cancel(){},speak(utterance){spoken.push({text:utterance.text,lang:utterance.lang});if(utterance.onend)utterance.onend()}}},
   SpeechSynthesisUtterance:function(text){this.text=text},
   localStorage:{getItem(){return null},setItem(){}},matchMedia(){return {matches:true}},
   setTimeout(fn,ms){if(ms<1000)return setTimeout(fn,0);return 0},clearTimeout,
   console, Math});
-vm.runInContext(script + `\nwindow.checks={freshGrid,runs,possibleMove,swap,expandSpecials,collapse,start,readEliminatedGroups,
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../vocabulary-data.js'),'utf8'),context);
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../curriculum-plan.js'),'utf8'),context);
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../word-curriculum.js'),'utf8'),context);
+context.WordCurriculum=context.window.WordCurriculum;
+vm.runInContext(script + `\nreadAll=true;window.checks={freshGrid,runs,possibleMove,swap,expandSpecials,collapse,start,readEliminatedGroups,
   get grid(){return grid},set grid(value){grid=value},get moves(){return moves},
   get collected(){return collected},get busy(){return busy},get finished(){return finished},
   get saved(){return saved},setGoal(value){goal=value}};`, context);
